@@ -8,7 +8,7 @@ RUN make build
 
 FROM alpine
 
-RUN apk add --update make
+RUN apk add make
 
 COPY --from=0 /main /main
 COPY --from=0 /mythic_c3_server /mythic_c3_server
