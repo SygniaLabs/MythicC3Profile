@@ -32,6 +32,13 @@ func getC2JsonConfig() (*config, error) {
 		return &currentConfig, nil
 	}
 }
+func writeC2JsonConfig(cfg *config) error {
+	jsonBytes, err := json.MarshalIndent(*cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(".", "c3", "c2_code", "config.json"), jsonBytes, 644)
+}
 
 var C3c2definition = c2structs.C2Profile{
 	Name:             "C3",
@@ -45,22 +52,74 @@ var C3c2definition = c2structs.C2Profile{
 			Success: true,
 			Message: fmt.Sprintf("Called config check\n%v", message),
 		}
+		if _,ok := message.Parameters["pipename"]; !ok {
+			response.Success = false
+			response.Error = "Failed to get pipename attribute"
+			return response
+		}
 		return response;		
 	},
 	OPSECCheckFunction: func(message c2structs.C2OPSECMessage) c2structs.C2OPSECMessageResponse {
 		response := c2structs.C2OPSECMessageResponse{
 			Success: true,
 			Message: fmt.Sprintf("Called opsec check:\n%v", message),
-		}		
+		}
 		response.Message = "No immediate issues with configuration"
-		return response		
+		return response
+	},
+	GetIOCFunction: func(message c2structs.C2GetIOCMessage) c2structs.C2GetIOCMessageResponse {
+		response := c2structs.C2GetIOCMessageResponse{Success: true}
+		getPipe, err := message.GetStringArg("pipename")
+		if err != nil {
+			response.Success = false
+			response.Error = "Failed to get pipename"
+			return response
+		}
+
+		response.IOCs = append(response.IOCs, c2structs.IOC{
+			Type: "pipename",
+			IOC:  fmt.Sprintf("%s", getPipe),
+		})
+		return response
+	},
+	SampleMessageFunction: func(message c2structs.C2SampleMessageMessage) c2structs.C2SampleMessageResponse {
+		response := c2structs.C2SampleMessageResponse{Success: true}
+		sampleMessage := "Currently no samples"
+		response.Message = sampleMessage
+		return response
+	},
+	HostFileFunction: func(message c2structs.C2HostFileMessage) c2structs.C2HostFileMessageResponse {
+		config, err := getC2JsonConfig()
+		if err != nil {
+			return c2structs.C2HostFileMessageResponse{
+				Success: false,
+				Error:   err.Error(),
+			}
+		}
+		for i, _ := range config.Instances {
+			if config.Instances[i].PayloadHostPaths == nil {
+				config.Instances[i].PayloadHostPaths = make(map[string]string)
+			}
+			config.Instances[i].PayloadHostPaths[message.HostURL] = message.FileUUID
+		}
+		err = writeC2JsonConfig(config)
+		if err != nil {
+			return c2structs.C2HostFileMessageResponse{
+				Success: false,
+				Error:   err.Error(),
+			}
+		}
+		return c2structs.C2HostFileMessageResponse{
+			Success: true,
+		}
 	},
 }
 var C3c2parameters = []c2structs.C2Parameter{
 	{
 		Name:          "pipename",
 		Description:   "Named Pipe",
-		VerifierRegex: `[a-z0-9]{6,}`,
+		VerifierRegex: `[a-z0-9]{8}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{12}`,
+		FormatString:  `[a-z0-9]{8}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{12}`,
 		ParameterType: c2structs.C2_PARAMETER_TYPE_STRING,
 		Randomize:     true,
 		Required:      true,
@@ -68,7 +127,7 @@ var C3c2parameters = []c2structs.C2Parameter{
 	{
 		Name:          "killdate",
 		Description:   "Kill Date",
-		DefaultValue:  365,
+		DefaultValue:  30,
 		ParameterType: c2structs.C2_PARAMETER_TYPE_DATE,
 		Required:      false,
 	},
