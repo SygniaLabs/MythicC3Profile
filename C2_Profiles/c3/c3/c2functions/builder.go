@@ -118,8 +118,8 @@ var C3c2parameters = []c2structs.C2Parameter{
 	{
 		Name:          "pipename",
 		Description:   "Named Pipe",
-		VerifierRegex: `[a-z0-9]{6,}`,
-		FormatString:  `[a-z0-9]{6,}`,
+		VerifierRegex: `[a-z0-9]{8}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{12}`,
+		FormatString:  `[a-z0-9]{8}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{12}`,
 		ParameterType: c2structs.C2_PARAMETER_TYPE_STRING,
 		Randomize:     true,
 		Required:      true,
