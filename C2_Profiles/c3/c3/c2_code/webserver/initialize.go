@@ -102,7 +102,7 @@ func InitializeGinLogger(configInstance instanceConfig) gin.HandlerFunc {
 
 		param.Path = path
 		if configInstance.Debug {
-			logging.LogDebug("WebServer Logging",
+			logging.LogInfo("WebServer Logging",
 				"ClientIP", param.ClientIP,
 				"method", param.Method,
 				"path", param.Path,
@@ -122,12 +122,12 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 		req.URL.Host = fmt.Sprintf("%s:%d", utils.MythicConfig.MythicServerHost, utils.MythicConfig.MythicServerPort)
 		req.Host = fmt.Sprintf("%s:%d", utils.MythicConfig.MythicServerHost, utils.MythicConfig.MythicServerPort)
 		req.URL.Path = "/agent_message"
-		req.Header.Add("mythic", "http")
+		req.Header.Add("mythic", "c3")
 	}
 	proxy := &httputil.ReverseProxy{Director: director,
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
-				Timeout: 3 * time.Second,
+				Timeout: 30 * time.Second,
 			}).DialContext,
 			MaxIdleConns:    10,
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -150,7 +150,7 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 			proxyForFiles := &httputil.ReverseProxy{Director: directorForFiles,
 				Transport: &http.Transport{
 					DialContext: (&net.Dialer{
-						Timeout: 3 * time.Second,
+						Timeout: 30 * time.Second,
 					}).DialContext,
 					MaxIdleConns:    10,
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -163,7 +163,7 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 func generateServeFile(configInstance instanceConfig, fileUUID string, proxyForFiles *httputil.ReverseProxy) gin.HandlerFunc {
 
 	if configInstance.Debug {
-		logging.LogDebug("debug route", "host", utils.MythicConfig.MythicServerHost, "path", "/direct/download/"+fileUUID)
+		logging.LogInfo("debug route", "host", utils.MythicConfig.MythicServerHost, "path", "/direct/download/"+fileUUID)
 	}
 	return func(c *gin.Context) {
 		proxyForFiles.ServeHTTP(c.Writer, c.Request)
@@ -172,7 +172,7 @@ func generateServeFile(configInstance instanceConfig, fileUUID string, proxyForF
 
 func getRequest(configInstance instanceConfig, proxy *httputil.ReverseProxy) gin.HandlerFunc {
 	if configInstance.Debug {
-		logging.LogDebug("debug route", "host", utils.MythicConfig.MythicServerHost, "path", "/agent_message")
+		logging.LogInfo("debug route", "host", utils.MythicConfig.MythicServerHost, "path", "/agent_message")
 	}
 	return func(c *gin.Context) {
 		for header, val := range configInstance.Headers {
@@ -184,7 +184,7 @@ func getRequest(configInstance instanceConfig, proxy *httputil.ReverseProxy) gin
 
 func postRequest(configInstance instanceConfig, proxy *httputil.ReverseProxy) gin.HandlerFunc {
 	if configInstance.Debug {
-		logging.LogDebug("debug route", "host", utils.MythicConfig.MythicServerHost, "path", "/agent_message")
+		logging.LogInfo("debug route", "host", utils.MythicConfig.MythicServerHost, "path", "/agent_message")
 	}
 	return func(c *gin.Context) {
 		for header, val := range configInstance.Headers {
@@ -207,7 +207,7 @@ func checkCerts(certPath string, keyPath string) error {
 }
 func generateCerts(configInstance instanceConfig) error {
 
-	logging.LogDebug("[*] generating certs now...")
+	logging.LogInfo("[*] generating certs now...")
 	priv, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
 		logging.LogError(err, "failed to generate private key")
@@ -258,6 +258,6 @@ func generateCerts(configInstance instanceConfig) error {
 	}
 	pem.Encode(keyOut, &pem.Block{Type: "EC PRIVATE KEY", Bytes: marshalKey})
 	keyOut.Close()
-	logging.LogDebug("Successfully generated new SSL certs\n")
+	logging.LogInfo("Successfully generated new SSL certs\n")
 	return nil
 }
