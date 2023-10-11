@@ -122,7 +122,7 @@ func setRoutes(r *gin.Engine, configInstance instanceConfig) {
 		req.URL.Host = fmt.Sprintf("%s:%d", utils.MythicConfig.MythicServerHost, utils.MythicConfig.MythicServerPort)
 		req.Host = fmt.Sprintf("%s:%d", utils.MythicConfig.MythicServerHost, utils.MythicConfig.MythicServerPort)
 		req.URL.Path = "/agent_message"
-		req.Header.Add("mythic", "c3")
+		req.Header.Add("mythic", "C3")
 	}
 	proxy := &httputil.ReverseProxy{Director: director,
 		Transport: &http.Transport{
