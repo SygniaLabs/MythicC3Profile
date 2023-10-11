@@ -52,13 +52,9 @@ var C3c2definition = c2structs.C2Profile{
 			Success: true,
 			Message: fmt.Sprintf("Called config check\n%v", message),
 		}
-		if pipename, ok := message.Parameters["pipename"]; !ok {
+		if _,ok := message.Parameters["pipename"]; !ok {
 			response.Success = false
 			response.Error = "Failed to get pipename attribute"
-			return response
-		} else if currentConfig, err := getC2JsonConfig(); err != nil {
-			response.Success = false
-			response.Error = err.Error()
 			return response
 		}
 		return response;		
